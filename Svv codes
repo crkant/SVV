@@ -1,0 +1,288 @@
+SVV codes for lab examination
+1. // class definition
+class class_name;
+int a;
+task set(int b);
+a=b;
+endtask
+function int get();
+return a;
+endfunction
+endclass
+module class_ex;
+class_name class1;
+class_name class2;
+initial begin
+ class_name class_1 = new();
+class_name class_2 = new();
+class_1.set(10);
+class_2.set(20);
+$display("\tclass_1::value of x = %0d",class_1.get());
+$display("\tclass_1::value of x = %0d",class_2.get());
+end
+endmodule
+
+2. //dynamic array
+module dynamic_array();
+ // Declare dynamic array
+   reg [7:0] array_1 [];
+initial begin
+    $display ("Setting array size to 5"); // Allocate array for 5locations
+  array_1 = new[5];
+  $display("Initial the array with default values");
+  for (int i = 0; i < 5; i ++) begin
+   array_1[i] = i;
+  end
+  // Doubling the size of array, with old content still valid
+  array_1 = new[8] (array_1); 
+  // Print current size
+  $display ("Current array size is %d",array_1.size());
+  for (int i = 0; i < 5; i ++) begin
+    $display ("Value at location %0d is %d ", i, array_1[i]);
+  end
+  $display ("Deleting the array");  // Delete array
+  array_1.delete();
+  $display ("Current array size is %d",array_1.size());
+  #1 $finish;
+end
+endmodule
+
+3. Class Inheritance
+class parent_class;
+bit [31:0] addr;
+endclass
+class child_class extends parent_class;
+bit [31:0] data;
+endclass
+module inheritance;
+initial begin
+child_class c = new();
+c.addr = 13;
+c.data = 37;
+$display("value of addr = %0d data=%0d",c.addr,c.data);
+end
+endmodule
+
+// 4.Queues
+module queues();
+  int q[$] = { 2, 4, 8, 10, 12, 14,16 }; 
+  int p[$]; 
+  int e, pos;
+  int fronte, backe;
+    initial  begin
+    $display("Displaying elements of q");
+    $display("%p",q); 
+    e = q[0]; 	// read the first (leftmost) item 
+    $display("@%0d..first element = %0d", $time, e);
+    e = q[$]; 	// read the last (rightmost) item 
+    $display("@%0d...last element = %0d", $time, e);
+    p = q; 		// read and write entire queue (copy) 
+    $display("Displaying elements of p");
+    $display("%p",p); 
+    q.push_front(13); 
+    $display("Push front");
+    $display("%p",q); 
+    $display("Push back"); 
+    q.push_back(99); 
+    q.push_back(299); 
+    $display("%p",q); 
+    fronte = q.pop_front();
+    backe = q.pop_back();
+    $display("pop...fe = %0d ....be = %0d", fronte, backe);
+    $display("Displaying elements of q after pop");
+    $display("%p",q); 
+    q.insert(4,18); //insert(index,value)
+    $display("Again displaying after insert q.insert(4,18)");
+    $display("%p",q);  
+    q = {}; // clear the queue (delete all items) 
+    $display("Displaying elements of q after q = {}");
+    $display("%p",q);
+    $finish;
+    end
+endmodule
+
+//5. Super usage
+class parent_class;
+  bit [31:0] addr;
+    function display();
+    $display("Addr = %0d",addr);
+  endfunction
+endclass
+class child_class extends parent_class;
+  bit [31:0] data;
+  bit [31:0] addr1;
+  bit [31:0] add;
+  	add = addr1+ super.addr;
+    function display1();
+    super.display(); // display function of parent class
+    $display("Data = %0d",data);
+    $display("add = %0d",add);
+  endfunction
+endclass
+module super_keyword;
+  initial begin
+    child_class c=new();
+    c.addr = 10;
+    c.data = 20;
+    c.addr1 = 10;
+    c.display1();
+  end
+endmodule
+
+//6. This key
+class packet;
+    //class properties
+  bit [31:0] addr;
+  bit [31:0] data;
+    //constructor
+  function new(bit [31:0] addr,data);
+    this.addr  = addr;
+    this.data  = data;
+     endfunction
+    //method to display class prperties
+  function void display();
+    $display("\t addr  = %0h",addr);
+    $display("\t data  = %0h",data);
+  endfunction
+endclass
+
+module this_keyword;
+  packet pkt;
+  initial begin
+    pkt = new(32'h10,32'hFF);
+    pkt.display();
+  end
+endmodule
+
+//7. PROGRAM BLOCK VS MODULE
+// design in verilog
+ module design_1(output bit[3:0] data);
+	initial
+	begin
+		data<=4'b1001;
+	end
+endmodule
+// module block 
+module testbench(input bit[3:0] data);
+	initial
+	begin
+		$display("\t data =%d",data);
+		#10;
+	end
+endmodule
+
+//top module
+module top;
+	wire [3:0] data;
+	design_1 DUT(data); // instantation of the design 
+	testbench TEST(data); // instantation of the testbench
+endmodule
+
+//8/SEMAPHORE EXAMPLE/
+module semaphore_ex;
+  semaphore sema; //declaring semaphore sema
+    initial begin
+    sema=new(1); //creating sema with '1' key
+    fork
+      display(); //process-1
+      display(); //process-2
+    join
+  end
+    //display method
+  task automatic display();
+    sema.get(1); //getting '1' key from sema
+    $display($time,"\tCurent Simulation Time");
+    #30;
+    sema.put(1); //putting '1' key to sema
+  endtask
+endmodule
+
+9. //Interface Example
+module arb_port (output logic [1:0] grant,
+input logic [1:0] request,
+input logic reset,
+input logic clk);
+	always @(posedge clk or posedge reset) begin
+	if (reset)
+	grant <= 2'b00;
+	else
+end
+endmodule
+module test (input logic [1:0] grant,
+output logic [1:0] request,
+output logic reset,
+input logic clk);
+	initial begin
+	@(posedge clk) request <= 	2'b01;
+	$display("@%0d: Drove 	req=01", $time);
+	repeat (2) @(posedge clk);
+	if (grant != 2'b01)
+	$display("@%0d: a1: grant != 	2'b01", $time);
+$finish;
+end
+endmodule
+
+10.polymorphism
+virtual class parent_class;
+virtual task display();
+$display(" This is class A ");
+endtask
+endclass
+virtual class child_class extends parent_class ;
+task display();
+$display(" This is Extended class A ");
+endtask
+endclass
+module polymorphism ;
+child_class my_ea;
+parent_class my_a;
+initial
+begin
+my_a = new();
+my_a.display();
+my_ea = new();
+my_a = my_ea; 
+my_ea= my_a;  // check this syntax what happens if class handle is pointed to parent
+my_a.display();
+end  endmodule
+11.static method
+class packet;
+     //static property to keep track of number of pkt's created
+  static byte no_of_pkts_created;
+    //constructor
+  function new();
+      //incrementing pkt count on creating an object
+    no_of_pkts_created++;
+  endfunction
+     //method to display class prperties
+   function void display_packets_created();   /
+    $display("\t %0d packets created.",no_of_pkts_created);
+  endfunction 
+endclass
+module static_properties;
+  packet pkt[3];
+  initial begin
+    foreach(pkt[i]) begin
+      pkt[i] = new();
+    end
+    pkt[0].display_packets_created();
+  end  
+endmodule
+
+12.static property
+class packet; 
+  //static property to keep track of number of pkt's created
+  static byte no_of_pkts_created;
+	 byte dummy;
+  //constructor
+  function new();
+    //incrementing pkt count on creating an object
+    no_of_pkts_created++;
+	dummy++;
+  endfunction 
+  //method to display class prperties
+   static function void display_packets_created();   
+    $display("\t %0d packets created.",no_of_pkts_created);
+    $display("\t %0d packets dummy.",dummy);
+  endfunction 
+endclass
